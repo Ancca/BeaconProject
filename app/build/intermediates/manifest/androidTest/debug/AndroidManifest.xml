@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="com.estimote.configuration.test">
+    package="com.estimote.EstimoteApp.test">
 
     <uses-sdk android:minSdkVersion="18" android:targetSdkVersion="18" />
 
@@ -9,8 +9,8 @@
     </application>
 
     <instrumentation android:name="android.test.InstrumentationTestRunner"
-                     android:targetPackage="com.estimote.configuration"
+                     android:targetPackage="com.estimote.EstimoteApp"
                      android:handleProfiling="false"
                      android:functionalTest="false"
-                     android:label="Tests for com.estimote.configuration"/>
+                     android:label="Tests for com.estimote.EstimoteApp"/>
 </manifest>
