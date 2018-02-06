@@ -4,6 +4,7 @@ import android.content.Intent;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.text.method.ScrollingMovementMethod;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -41,10 +42,12 @@ public class GameActivity extends AppCompatActivity {
     String name = "";
     String bName = "Beacon";
     String bScore = "0-0-0";
+    int playerID;
     int playerSelection, beaconSelection = 0;
     String pWin,pLose,pTie,bWin,bLose,bTie = "";
     int durationShort = Toast.LENGTH_SHORT;
     int durationLong = Toast.LENGTH_LONG;
+    Map<String, String> beaconDataMap = new LinkedHashMap<>();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -58,7 +61,6 @@ public class GameActivity extends AppCompatActivity {
         playerName = (TextView) findViewById(R.id.playerName);
         playerScore = (TextView) findViewById(R.id.playerScore);
         spinner = (ProgressBar)findViewById(R.id.progressBar);
-        enableSpinner();
         connectionProvider = new DeviceConnectionProvider(this);
         connectToDevice();
 
@@ -98,8 +100,9 @@ public class GameActivity extends AppCompatActivity {
                 alertDialogBuilder.setView(promptsView);
                 final TextView scoreViewTitle = (TextView) promptsView.findViewById(R.id.scoreViewTitle);
                 final TextView scoreView = (TextView) promptsView.findViewById(R.id.scoreView);
+                scoreView.setMovementMethod(new ScrollingMovementMethod());
 
-                if (connection.isConnected()) {
+                /*if (connection.isConnected()) {
                     connection.settings.storage.readStorage(new StorageManager.ReadCallback() {
                         @Override
                         public void onSuccess(Map<String, String> map) {
@@ -119,6 +122,16 @@ public class GameActivity extends AppCompatActivity {
 
                         }
                     });
+                }*/
+
+                String mapKey = "";
+                String mapValue = "";
+                for (int mapID = 0; mapID+1 <= beaconDataMap.size(); mapID++) {
+                    mapKey = beaconDataMap.keySet().toArray()[mapID].toString();
+                    mapValue = beaconDataMap.values().toArray()[mapID].toString();
+                    Log.d(TAG, mapID + mapKey + " " + mapValue);
+                    String string = mapKey + " " + mapValue + "\n";
+                    addText(scoreView,string);
                 }
 
                 alertDialogBuilder
@@ -183,6 +196,7 @@ public class GameActivity extends AppCompatActivity {
     @Override
     protected void onStop() {
         super.onStop();
+        disableButtons();
         if (connection != null && connection.isConnected())
             connection.close();
     }
@@ -190,6 +204,7 @@ public class GameActivity extends AppCompatActivity {
     @Override
     protected void onPause() {
         super.onPause();
+        disableButtons();
         if (connection != null && connection.isConnected())
             connection.close();
     }
@@ -342,92 +357,83 @@ public class GameActivity extends AppCompatActivity {
 
     private void addScore(final String target, final String scoreName) {
         if (connection.isConnected()) {
-            connection.settings.storage.readStorage(new StorageManager.ReadCallback() {
-                @Override
-                public void onSuccess(Map<String, String> map) {
-                    Log.d(TAG, "First part of adding score");
-                    String mapKey = "";
-                    String mapValue = "";
-                    int mapID;
-                    for (mapID = 0; mapID+1 <= map.size(); mapID++) {
-                        mapKey = map.keySet().toArray()[mapID].toString();
-                        mapValue = map.values().toArray()[mapID].toString();
-                        if (mapKey.equals(bName)) {
-                            bScore = mapValue;
-                            String[] tokens = mapValue.split("-");
-                            String win = tokens[0];
-                            String lose = tokens[1];
-                            String tie = tokens[2];
-                            if (scoreName.equals("win")) {
-                                Log.d(TAG, "Adding a loss (b)");
-                                int i = Integer.parseInt(lose);
-                                i++;
-                                lose = Integer.toString(i);
-                            }
-                            else if (scoreName.equals("lose")) {
-                                Log.d(TAG, "Adding a win (b)");
-                                int i = Integer.parseInt(win);
-                                i++;
-                                win = Integer.toString(i);
-                            }
-                            else if (scoreName.equals("tie")) {
-                                Log.d(TAG, "Adding a tie (b)");
-                                int i = Integer.parseInt(tie);
-                                i++;
-                                tie = Integer.toString(i);
-                            }
-                            mapValue = win + "-" + lose + "-" + tie;
-                            map.put(mapKey,mapValue);
-                        }
-                        else if (mapKey.equals(target)) {
-                            Log.d(TAG, "Second part of adding score");
-                            String[] tokens = mapValue.split("-");
-                            String win = tokens[0];
-                            String lose = tokens[1];
-                            String tie = tokens[2];
-                            if (scoreName.equals("win")) {
-                                Log.d(TAG, "Adding a win");
-                                int i = Integer.parseInt(win);
-                                i++;
-                                win = Integer.toString(i);
-                            }
-                            else if (scoreName.equals("lose")) {
-                                Log.d(TAG, "Adding a loss");
-                                int i = Integer.parseInt(lose);
-                                i++;
-                                lose = Integer.toString(i);
-                            }
-                            else if (scoreName.equals("tie")) {
-                                Log.d(TAG, "Adding a tie");
-                                int i = Integer.parseInt(tie);
-                                i++;
-                                tie = Integer.toString(i);
-                            }
-                            mapValue = win + "-" + lose + "-" + tie;
-                            map.put(mapKey,mapValue);
-
-                            Log.d(TAG, mapKey + " " + mapValue);
-                            Log.d(TAG, "Writing new data");
-                            connection.settings.storage.writeStorage(map, new StorageManager.WriteCallback() {
-                                @Override
-                                public void onSuccess() {
-                                    getData();
-                                }
-
-                                @Override
-                                public void onFailure(DeviceConnectionException e) {
-
-                                }
-                            });
-                        }
+            Log.d(TAG, "First part of adding score");
+            String mapKey = "";
+            String mapValue = "";
+            int mapID;
+            for (mapID = 0; mapID+1 <= beaconDataMap.size(); mapID++) {
+                mapKey = beaconDataMap.keySet().toArray()[mapID].toString();
+                mapValue = beaconDataMap.values().toArray()[mapID].toString();
+                if (mapKey.equals(bName)) {
+                    String[] tokens = mapValue.split("-");
+                    String win = tokens[0];
+                    String lose = tokens[1];
+                    String tie = tokens[2];
+                    if (scoreName.equals("win")) {
+                        Log.d(TAG, "Adding a loss (b)");
+                        int i = Integer.parseInt(lose);
+                        i++;
+                        lose = Integer.toString(i);
                     }
+                    else if (scoreName.equals("lose")) {
+                        Log.d(TAG, "Adding a win (b)");
+                        int i = Integer.parseInt(win);
+                        i++;
+                        win = Integer.toString(i);
+                    }
+                    else if (scoreName.equals("tie")) {
+                        Log.d(TAG, "Adding a tie (b)");
+                        int i = Integer.parseInt(tie);
+                        i++;
+                        tie = Integer.toString(i);
+                    }
+                    mapValue = win + "-" + lose + "-" + tie;
+                    bScore = mapValue;
+                    beaconDataMap.put(mapKey,mapValue);
                 }
+                else if (mapKey.equals(target)) {
+                    Log.d(TAG, "Second part of adding score");
+                    String[] tokens = mapValue.split("-");
+                    String win = tokens[0];
+                    String lose = tokens[1];
+                    String tie = tokens[2];
+                    if (scoreName.equals("win")) {
+                        Log.d(TAG, "Adding a win");
+                        int i = Integer.parseInt(win);
+                        i++;
+                        win = Integer.toString(i);
+                    }
+                    else if (scoreName.equals("lose")) {
+                        Log.d(TAG, "Adding a loss");
+                        int i = Integer.parseInt(lose);
+                        i++;
+                        lose = Integer.toString(i);
+                    }
+                    else if (scoreName.equals("tie")) {
+                        Log.d(TAG, "Adding a tie");
+                        int i = Integer.parseInt(tie);
+                        i++;
+                        tie = Integer.toString(i);
+                    }
+                    mapValue = win + "-" + lose + "-" + tie;
+                    score = mapValue;
+                    beaconDataMap.put(mapKey,mapValue);
 
-                @Override
-                public void onFailure(DeviceConnectionException e) {
-                    Log.d(TAG, "Data read was a failure : " + e.getLocalizedMessage());
+                    Log.d(TAG, mapKey + " " + mapValue);
+                    Log.d(TAG, "Writing new data");
+                    connection.settings.storage.writeStorage(beaconDataMap, new StorageManager.WriteCallback() {
+                        @Override
+                        public void onSuccess() {
+                            setData();
+                        }
+
+                        @Override
+                        public void onFailure(DeviceConnectionException e) {
+
+                        }
+                    });
                 }
-            });
+            }
         }
     }
 
@@ -437,33 +443,24 @@ public class GameActivity extends AppCompatActivity {
             connection.settings.storage.readStorage(new StorageManager.ReadCallback() {
                 @Override
                 public void onSuccess(Map<String, String> map) {
+                    beaconDataMap = map;
                     String mapKey = "";
                     String mapValue = "";
                     int mapID;
                     for (mapID = 0; mapID+1 <= map.size(); mapID++) {
-                        mapKey = map.keySet().toArray()[mapID].toString();
-                        mapValue = map.values().toArray()[mapID].toString();
+                        mapKey = beaconDataMap.keySet().toArray()[mapID].toString();
+                        mapValue = beaconDataMap.values().toArray()[mapID].toString();
                         Log.d(TAG,"Map key: " + mapKey + " Map value: " + mapValue);
                         if (mapID == 0) {
                             bName = mapKey;
                             bScore = mapValue;
-                            String[] tokens = mapValue.split("-");
-                            bWin = tokens[0];
-                            bLose = tokens[1];
-                            bTie = tokens[2];
-                            setText(beaconName, bName + " ");
-                            setText(beaconScore,bWin + "W " + bLose + "L " + bTie + "T ");
                         }
                         else if (mapKey.equals(name)) {
+                            playerID = mapID;
                             score = mapValue;
-                            String[] tokens = mapValue.split("-");
-                            pWin = tokens[0];
-                            pLose = tokens[1];
-                            pTie = tokens[2];
-                            setText(playerName,name + " ");
-                            setText(playerScore,pWin + "W " + pLose + "L " + pTie + "T ");
                         }
                     }
+                    setData();
                     enableButtons();
                     disableSpinner();
                 }
@@ -475,7 +472,29 @@ public class GameActivity extends AppCompatActivity {
         }
     }
 
+    private void setData() {
+        // Set beacon data (display it)
+        String[] tokens = bScore.split("-");
+        bWin = tokens[0];
+        bLose = tokens[1];
+        bTie = tokens[2];
+        setText(beaconName, bName + " ");
+        setText(beaconScore,bWin + "W " + bLose + "L " + bTie + "T ");
+
+        // Set player data (display it)
+        String[] tokens2 = score.split("-");
+        pWin = tokens2[0];
+        pLose = tokens2[1];
+        pTie = tokens2[2];
+        setText(playerName,name + " ");
+        setText(playerScore,pWin + "W " + pLose + "L " + pTie + "T ");
+
+        enableButtons();
+        disableSpinner();
+    }
+
     private void connectToDevice() {
+        enableSpinner();
         // Check if app is already connected to the beacon
         if (connection == null || !connection.isConnected()) {
             connectionProvider.connectToService(new DeviceConnectionProvider.ConnectionProviderCallback() {

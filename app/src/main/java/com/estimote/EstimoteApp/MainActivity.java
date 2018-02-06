@@ -176,6 +176,7 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
+        enableButtons();
     }
 
     @Override
@@ -183,5 +184,6 @@ public class MainActivity extends AppCompatActivity {
         super.onPause();
         devicesScanner.stopScanning();
         spinner.setVisibility(View.GONE);
+        disableButtons();
     }
 }
