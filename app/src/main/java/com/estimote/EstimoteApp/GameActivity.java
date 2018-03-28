@@ -45,6 +45,8 @@ public class GameActivity extends AppCompatActivity {
 
     String score = "";
     String name = "";
+    String version = "";
+    String beaconID = "";
     String bName = "Beacon";
     String bScore = "0-0-0";
     int playerID;
@@ -523,16 +525,16 @@ public class GameActivity extends AppCompatActivity {
                                 }
                                 try {
                                     outputStream = openFileOutput(file_beaconID, Context.MODE_PRIVATE);
-                                    String beaconID = beaconDataMap.values().toArray()[1].toString();
-                                    outputStream.write(beaconID.getBytes());
+                                    String bid = beaconDataMap.values().toArray()[1].toString();
+                                    outputStream.write(bid.getBytes());
                                     outputStream.close();
                                 } catch (Exception e) {
                                     e.printStackTrace();
                                 }
                                 try {
                                     outputStream = openFileOutput(file_playerVersion, Context.MODE_PRIVATE);
-                                    String playerVersion = beaconDataMap.values().toArray()[2].toString();
-                                    outputStream.write(playerVersion.getBytes());
+                                    String pv = beaconDataMap.values().toArray()[2].toString();
+                                    outputStream.write(pv.getBytes());
                                     outputStream.close();
                                 } catch (Exception e) {
                                     e.printStackTrace();
@@ -584,26 +586,47 @@ public class GameActivity extends AppCompatActivity {
                                 @Override
                                 public void onSuccess(Map<String, String> map) {
                                     beaconDataMap = map;
-                                    Log.d(TAG,"Data been read");
+                                    Log.d(TAG,"Data has been read");
                                     FileInputStream inputStream;
                                     int i;
-                                    StringBuffer sb = new StringBuffer(100);
                                     // Try to open the file "player_name"
                                     // If the file is found, read the file for the player's name
                                     // If the file is not found, ask user a name and create a file for it
                                     try {
                                         inputStream = openFileInput(file_player);
+                                        StringBuffer sb = new StringBuffer(100);
                                         while ((i = inputStream.read())!= -1) {
                                             name = sb.append((char)i).toString();
                                         }
                                         inputStream.close();
-                                    } catch (FileNotFoundException e) {
-                                        Log.d(TAG,"NO NAME FOUND");
                                     } catch (Exception e) {
-
+                                        e.printStackTrace();
                                     }
+                                    try {
+                                        inputStream = openFileInput(file_beaconID);
+                                        StringBuffer sb = new StringBuffer(100);
+                                        while ((i = inputStream.read())!= -1) {
+                                            beaconID = sb.append((char)i).toString();
+                                        }
+                                        inputStream.close();
+                                    } catch (Exception e) {
+                                        e.printStackTrace();
+                                    }
+                                    try {
+                                        inputStream = openFileInput(file_playerVersion);
+                                        StringBuffer sb = new StringBuffer(100);
+                                        while ((i = inputStream.read())!= -1) {
+                                            version = sb.append((char)i).toString();
+                                        }
+                                        inputStream.close();
+                                    } catch (Exception e) {
+                                        e.printStackTrace();
+                                    }
+
                                     // If player hasn't chosen a name yet, data will not be fetched until the player has created a name
                                     Log.d(TAG,name);
+                                    Log.d(TAG,beaconID);
+                                    Log.d(TAG,version);
                                     if (name.isEmpty()) {
                                         Log.d(TAG,"Waiting for player's name");
                                         createPlayer();
