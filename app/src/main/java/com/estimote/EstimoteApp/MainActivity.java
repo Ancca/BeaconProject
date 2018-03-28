@@ -34,7 +34,7 @@ public class MainActivity extends AppCompatActivity {
     int durationLong = Toast.LENGTH_LONG;
     String previousBeaconId = "";
     String targetBeaconId = "";
-    String filename = "beacon_id";
+    String filename = "beacon_connection_id";
 
     private ConfigurableDevicesScanner devicesScanner;
 
@@ -119,6 +119,7 @@ public class MainActivity extends AppCompatActivity {
                             } catch (Exception e) {
                                 e.printStackTrace();
                             }
+                            Log.d(TAG,targetBeaconId);
                             Intent intent = new Intent(MainActivity.this, GameActivity.class);
                             intent.putExtra(EXTRA_SCAN_RESULT_ITEM_DEVICE, item.device);
                             spinner.setVisibility(View.GONE);

@@ -86,17 +86,6 @@
             android:layout_toEndOf="@id/paperButton"/>
 
         <Button
-            android:id="@+id/resetButton"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Reset"
-            android:textSize="15dp"
-            android:layout_alignParentStart="true"
-            android:layout_centerHorizontal="true"
-            android:enabled="false"
-            android:layout_below="@id/rockButton"/>
-
-        <Button
             android:id="@+id/scoreButton"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
@@ -105,7 +94,7 @@
             android:layout_alignParentStart="true"
             android:layout_centerHorizontal="true"
             android:enabled="false"
-            android:layout_below="@id/resetButton"/>
+            android:layout_below="@id/rockButton"/>
 
         <ProgressBar
             android:id="@+id/progressBar"
