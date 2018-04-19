@@ -39,16 +39,20 @@ public class GameActivity extends AppCompatActivity {
     Button rockButton, paperButton, scissorsButton, scoreButton;
     ProgressBar spinner;
 
-    final String file_player = "player_name";
-    final String file_beaconID = "beacon_id";
-    final String file_playerVersion = "beacon_version";
+    String file_data = "beacon_";
 
     String score = "";
     String name = "";
     String version = "";
-    String beaconID = "";
+    String connectedBeaconGame = "";
+    String connectedBeaconID = "";
+    String connectedBeaconVersion = "";
+    String connectedBeaconGameK = "";
+    String connectedBeaconIDK = "";
+    String connectedBeaconVersionK = "";
     String bName = "Beacon";
     String bScore = "0-0-0";
+    String data = "";
     int playerID;
     int playerSelection, beaconSelection = 0;
     String pWin,pLose,pTie,bWin,bLose,bTie = "";
@@ -76,22 +80,31 @@ public class GameActivity extends AppCompatActivity {
         scoreButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
+                Log.d(TAG, "running scoreButton");
                 LayoutInflater li = LayoutInflater.from(context);
                 View promptsView = li.inflate(R.layout.scorelist, null);
                 final AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(
                         context);
                 alertDialogBuilder.setView(promptsView);
-                final TextView scoreViewTitle = (TextView) promptsView.findViewById(R.id.scoreViewTitle);
+                final TextView scoreViewSubtitle = (TextView) promptsView.findViewById(R.id.scoreViewSubtitle);
                 final TextView scoreView = (TextView) promptsView.findViewById(R.id.scoreView);
-                scoreView.setMovementMethod(new ScrollingMovementMethod());
 
-                String mapKey = "";
-                String mapValue = "";
-                for (int mapID = 0; mapID+1 <= beaconDataMap.size(); mapID++) {
+                String subtitle = beaconDataMap.values().toArray()[1].toString() + " (v." + beaconDataMap.values().toArray()[2].toString() + ")";
+                addText(scoreViewSubtitle,subtitle);
+
+                String mapKey;
+                String mapValue;
+                scoreView.setMovementMethod(new ScrollingMovementMethod());
+                for (int mapID = 3; mapID+1 <= beaconDataMap.size(); mapID++) {
                     mapKey = beaconDataMap.keySet().toArray()[mapID].toString();
                     mapValue = beaconDataMap.values().toArray()[mapID].toString();
-                    Log.d(TAG, mapID + mapKey + " " + mapValue);
-                    String string = mapKey + " " + mapValue + "\n";
+                    String[] tokens = mapValue.split("-");
+                    String win = tokens[0];
+                    String lose = tokens[1];
+                    String tie = tokens[2];
+                    String scoreString = win + "W " + lose + "L " + tie + "T";
+                    Log.d(TAG, mapID + " " + mapKey + " " + scoreString);
+                    String string = mapKey + " " + scoreString + "\n";
                     addText(scoreView,string);
                 }
 
@@ -113,6 +126,7 @@ public class GameActivity extends AppCompatActivity {
         rockButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
+                Log.d(TAG, "running rockButton");
                 playerSelection = 1;
                 Log.d(TAG,"Player selected rock");
                 randomSelection();
@@ -126,6 +140,7 @@ public class GameActivity extends AppCompatActivity {
         paperButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
+                Log.d(TAG, "running paperButton");
                 playerSelection = 2;
                 Log.d(TAG, "Player selected paper");
                 randomSelection();
@@ -139,6 +154,7 @@ public class GameActivity extends AppCompatActivity {
         scissorsButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
+                Log.d(TAG, "running scissorsButton");
                 playerSelection = 3;
                 Log.d(TAG, "Player selected scissors");
                 randomSelection();
@@ -401,6 +417,7 @@ public class GameActivity extends AppCompatActivity {
 
                         @Override
                         public void onFailure(DeviceConnectionException e) {
+                            e.printStackTrace();
 
                         }
                     });
@@ -424,15 +441,6 @@ public class GameActivity extends AppCompatActivity {
                     mapKey = beaconDataMap.keySet().toArray()[mapID].toString();
                     mapValue = beaconDataMap.values().toArray()[mapID].toString();
                     Log.d(TAG,"Map key: " + mapKey + " Map value: " + mapValue);
-                    if (mapID == 0) {
-                        // MapID == 0 is the line for detecting if the beacon supports the game
-                    }
-                    if (mapID == 1) {
-                        // MapID == 1 is the line for beacon's ID for the game
-                    }
-                    if (mapID == 2) {
-                        // MapID == 2 is the line for the beacon's current data version
-                    }
                     if (mapID == 3) {
                         // MapID == 3 is the line for beacon's own game data
                         bName = mapKey;
@@ -451,7 +459,7 @@ public class GameActivity extends AppCompatActivity {
 
             @Override
             public void onFailure(DeviceConnectionException e) {
-
+                e.printStackTrace();
             }
         });
     }
@@ -480,7 +488,8 @@ public class GameActivity extends AppCompatActivity {
     }
 
     private void createPlayer() {
-        Log.d(TAG,"Name file was not found");
+        Log.d(TAG,"Player name was not found");
+        Log.d(TAG,"running createPlayer");
         // Name was not found, so a window is created for asking the user's name
         runOnUiThread(new Runnable() {
             @Override
@@ -517,29 +526,14 @@ public class GameActivity extends AppCompatActivity {
                             else {
                                 FileOutputStream outputStream;
                                 try {
-                                    outputStream = openFileOutput(file_player, Context.MODE_PRIVATE);
-                                    outputStream.write(name.getBytes());
+                                    outputStream = openFileOutput(file_data, Context.MODE_PRIVATE);
+                                    String data2 = connectedBeaconVersion + " " + name;
+                                    Log.d(TAG,data2);
+                                    outputStream.write(data2.getBytes());
                                     outputStream.close();
                                 } catch (Exception e) {
                                     e.printStackTrace();
                                 }
-                                try {
-                                    outputStream = openFileOutput(file_beaconID, Context.MODE_PRIVATE);
-                                    String bid = beaconDataMap.values().toArray()[1].toString();
-                                    outputStream.write(bid.getBytes());
-                                    outputStream.close();
-                                } catch (Exception e) {
-                                    e.printStackTrace();
-                                }
-                                try {
-                                    outputStream = openFileOutput(file_playerVersion, Context.MODE_PRIVATE);
-                                    String pv = beaconDataMap.values().toArray()[2].toString();
-                                    outputStream.write(pv.getBytes());
-                                    outputStream.close();
-                                } catch (Exception e) {
-                                    e.printStackTrace();
-                                }
-
                                 if (connection.isConnected()) {
                                     beaconDataMap.put(name, "0-0-0");
                                     connection.settings.storage.writeStorage(beaconDataMap, new StorageManager.WriteCallback() {
@@ -555,7 +549,6 @@ public class GameActivity extends AppCompatActivity {
                                         }
                                     });
                                 }
-
                                 alertDialog.cancel();
                             }
                         }
@@ -586,63 +579,66 @@ public class GameActivity extends AppCompatActivity {
                                 @Override
                                 public void onSuccess(Map<String, String> map) {
                                     beaconDataMap = map;
-                                    Log.d(TAG,"Data has been read");
-                                    FileInputStream inputStream;
-                                    int i;
-                                    // Try to open the file "player_name"
-                                    // If the file is found, read the file for the player's name
-                                    // If the file is not found, ask user a name and create a file for it
-                                    try {
-                                        inputStream = openFileInput(file_player);
-                                        StringBuffer sb = new StringBuffer(100);
-                                        while ((i = inputStream.read())!= -1) {
-                                            name = sb.append((char)i).toString();
-                                        }
-                                        inputStream.close();
-                                    } catch (Exception e) {
-                                        e.printStackTrace();
-                                    }
-                                    try {
-                                        inputStream = openFileInput(file_beaconID);
-                                        StringBuffer sb = new StringBuffer(100);
-                                        while ((i = inputStream.read())!= -1) {
-                                            beaconID = sb.append((char)i).toString();
-                                        }
-                                        inputStream.close();
-                                    } catch (Exception e) {
-                                        e.printStackTrace();
-                                    }
-                                    try {
-                                        inputStream = openFileInput(file_playerVersion);
-                                        StringBuffer sb = new StringBuffer(100);
-                                        while ((i = inputStream.read())!= -1) {
-                                            version = sb.append((char)i).toString();
-                                        }
-                                        inputStream.close();
-                                    } catch (Exception e) {
-                                        e.printStackTrace();
-                                    }
-
-                                    // If player hasn't chosen a name yet, data will not be fetched until the player has created a name
-                                    Log.d(TAG,name);
-                                    Log.d(TAG,beaconID);
-                                    Log.d(TAG,version);
-                                    if (name.isEmpty()) {
-                                        Log.d(TAG,"Waiting for player's name");
-                                        createPlayer();
+                                    if (beaconDataMap.isEmpty()){
+                                        Log.d(TAG,"Beacon has no data");
+                                        displayMessage("Beacon is not used for the game",durationLong);
                                     }
                                     else {
-                                        getData();
+                                        try {
+                                            connectedBeaconGame = beaconDataMap.values().toArray()[0].toString();
+                                            connectedBeaconID = beaconDataMap.values().toArray()[1].toString();
+                                            connectedBeaconVersion = beaconDataMap.values().toArray()[2].toString();
+                                            connectedBeaconGameK = beaconDataMap.keySet().toArray()[0].toString();
+                                            connectedBeaconIDK = beaconDataMap.keySet().toArray()[1].toString();
+                                            connectedBeaconVersionK = beaconDataMap.keySet().toArray()[2].toString();
+                                        } catch (Exception e) {
+                                            e.printStackTrace();
+                                        }
+                                        Log.d(TAG,"Data has been read");
+                                        if (connectedBeaconGameK.equals("BeaconGame") && connectedBeaconIDK.equals("BeaconId") && connectedBeaconVersionK.equals("BeaconVersion")){
+                                            if (connectedBeaconGame.equals("true")){
+                                                FileInputStream inputStream;
+                                                int i;
+                                                // Read the file for the specific beacon
+                                                file_data = file_data+connectedBeaconID;
+                                                try {
+                                                    inputStream = openFileInput(file_data);
+                                                    StringBuffer sb = new StringBuffer(100);
+                                                    while ((i = inputStream.read())!= -1) {
+                                                        data = sb.append((char)i).toString();
+                                                    }
+                                                    inputStream.close();
+                                                    String[] data2 = data.split("\\s+");
+                                                    version = data2[0];
+                                                    name = data2[1];
+                                                } catch (Exception e) {
+                                                    e.printStackTrace();
+                                                }
+
+                                                // If player hasn't chosen a name yet, data will not be fetched until the player has created a name
+                                                if (name.isEmpty() || !version.equals(connectedBeaconVersion)) {
+                                                    createPlayer();
+                                                }
+                                                else {
+                                                    getData();
+                                                }
+                                            }
+                                            else {
+                                                displayMessage("Beacon game is disabled for this beacon",durationLong);
+                                                spinner.setVisibility(View.GONE);
+                                            }
+                                        }
+                                        else {
+                                            displayMessage("This beacon does not support the beacon game",durationLong);
+                                            spinner.setVisibility(View.GONE);
+                                        }
                                     }
                                 }
-
                                 @Override
                                 public void onFailure(DeviceConnectionException e) {
-
+                                    e.printStackTrace();
                                 }
                             });
-
-
                         }
 
                         @Override

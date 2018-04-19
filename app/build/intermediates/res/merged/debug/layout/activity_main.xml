@@ -9,13 +9,22 @@
     android:paddingTop="@dimen/activity_vertical_margin"
     tools:context="com.estimote.EstimoteApp.MainActivity">
 
-    <Button
-        android:id="@+id/connect_button"
+    <LinearLayout
+        android:id="@+id/layout"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Connect"
-        android:layout_centerVertical="true"
-        android:layout_centerHorizontal="true" />
+        android:layout_alignParentTop="true"
+        android:orientation="vertical"
+        android:scrollbars="vertical">
+
+        <Button
+            android:id="@+id/scanButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="SCAN FOR BEACONS"
+            android:layout_marginBottom="30dp"/>
+
+    </LinearLayout>
 
     <ProgressBar
         android:id="@+id/progressBar"
@@ -23,7 +32,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_centerHorizontal="true"
-        android:layout_above="@+id/connect_button"
+        android:layout_alignParentBottom="true"
         android:visibility="gone" />
 
 </RelativeLayout>

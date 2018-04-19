@@ -11,6 +11,7 @@ import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
+import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.Toast;
 
@@ -21,13 +22,14 @@ import com.estimote.sdk.connection.scanner.ConfigurableDevicesScanner;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.nio.charset.Charset;
+import java.util.ArrayList;
 import java.util.List;
 
 public class MainActivity extends AppCompatActivity {
 
     private static final String TAG = "APP_LOG";
     public static final String EXTRA_SCAN_RESULT_ITEM_DEVICE = "com.estimote.configuration.SCAN_RESULT_ITEM_DEVICE";
-    private Button connectButton;
+    private Button scanButton;
     private ProgressBar spinner;
     final Context context = this;
     int durationShort = Toast.LENGTH_SHORT;
@@ -35,54 +37,73 @@ public class MainActivity extends AppCompatActivity {
     String previousBeaconId = "";
     String targetBeaconId = "";
     String filename = "beacon_connection_id";
+    private LinearLayout layout;
+    int luku = 0;
+    String buttonText = "";
+    List<String> availableBeacons = new ArrayList<String>();
+    ArrayList<Button> beaconButtons = new ArrayList<Button>();
 
     private ConfigurableDevicesScanner devicesScanner;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
         setContentView(R.layout.activity_main);
-
         devicesScanner = new ConfigurableDevicesScanner(this);
-
+        layout = (LinearLayout) findViewById(R.id.layout);
         spinner = (ProgressBar)findViewById(R.id.progressBar);
-        connectButton = (Button) findViewById(R.id.connect_button);
-        connectButton.setOnClickListener(new View.OnClickListener() {
+        scanButton = (Button) findViewById(R.id.scanButton);
+
+        nfcConnect();
+        scanButton.setOnClickListener(new View.OnClickListener() {
             @Override
-            public void onClick(View v) {
-                if (previousBeaconId.isEmpty()) {
-                    displayMessage("You're required to connect to a beacon using NFC before you can connect to it using this button", durationLong);
+            public void onClick(View view) {
+                spinner.setVisibility(View.VISIBLE);
+                scanButton.setEnabled(false);
+                for(int i = 0; i < beaconButtons.size(); i++){
+                    layout.removeView(beaconButtons.get(i));
                 }
-                else {
-                    disableButtons();
-                    spinner.setVisibility(View.VISIBLE);
-                    targetBeaconId = previousBeaconId;
-                    connectToBeacon();
-                }
+                devicesScanner.scanForDevices(new ConfigurableDevicesScanner.ScannerCallback() {
+                    @Override
+                    public void onDevicesFound(final List<ConfigurableDevicesScanner.ScanResultItem> list) {
+                        for (ConfigurableDevicesScanner.ScanResultItem item : list) {
+                            Log.d(TAG,item.device.deviceId.toString());
+                            availableBeacons.add(item.device.deviceId.toString());
+                        }
+                        devicesScanner.stopScanning();
+                        spinner.setVisibility(View.GONE);
+                        scanButton.setEnabled(true);
+
+                        for(int i = 0; i < list.size(); i++){
+                            luku = i;
+                            final Button button = new Button(context);
+                            button.setText(availableBeacons.get(luku));
+                            button.setId(i);
+                            button.setSingleLine();
+                            button.setLayoutParams(new LinearLayout.LayoutParams(850, 150));
+                            button.setOnClickListener(new View.OnClickListener() {
+                                @Override
+                                public void onClick(View view) {
+                                    buttonText = button.getText().toString();
+                                    Log.d(TAG,"Pressed the button for + " + buttonText);
+                                    for (ConfigurableDevicesScanner.ScanResultItem item : list) {
+                                        if (item.device.deviceId.toString().equals(buttonText)) {
+                                            Intent intent = new Intent(MainActivity.this, GameActivity.class);
+                                            intent.putExtra(EXTRA_SCAN_RESULT_ITEM_DEVICE, list.get(button.getId()).device);
+                                            spinner.setVisibility(View.GONE);
+                                            startActivity(intent);
+                                        }
+                                    }
+                                }
+                            });
+                            beaconButtons.add(button);
+                            //optional: add your buttons to any layout if you want to see them in your screen
+                            layout.addView(button);
+                        }
+                    }
+                });
             }
         });
-
-        enableButtons();
-        getBeaconIdFromFile();
-        nfcConnect();
-    }
-
-    void getBeaconIdFromFile() {
-        FileInputStream inputStream;
-        int i;
-        StringBuffer sb = new StringBuffer(34);
-        // Try to open the file "beacon_id"
-        // If the file is found, read the file for the beacon's id
-        try {
-            inputStream = openFileInput(filename);
-            while ((i = inputStream.read())!= -1) {
-                previousBeaconId = sb.append((char)i).toString();
-            }
-            inputStream.close();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
     }
 
     void nfcConnect() {
@@ -93,8 +114,6 @@ public class MainActivity extends AppCompatActivity {
                     NdefMessage msg = (NdefMessage) rawMsgs[i];
                     DeviceId beaconId = findBeaconId(msg);
                     if (beaconId != null) {
-                        disableButtons();
-                        spinner.setVisibility(View.VISIBLE);
                         targetBeaconId = beaconId.toString();
                         connectToBeacon();
                     }
@@ -105,6 +124,8 @@ public class MainActivity extends AppCompatActivity {
 
     void connectToBeacon() {
         if (SystemRequirementsChecker.checkWithDefaultDialogs(this)) {
+            spinner.setVisibility(View.VISIBLE);
+            scanButton.setEnabled(false);
             devicesScanner.scanForDevices(new ConfigurableDevicesScanner.ScannerCallback() {
                 @Override
                 public void onDevicesFound(List<ConfigurableDevicesScanner.ScanResultItem> list) {
@@ -119,10 +140,10 @@ public class MainActivity extends AppCompatActivity {
                             } catch (Exception e) {
                                 e.printStackTrace();
                             }
-                            Log.d(TAG,targetBeaconId);
                             Intent intent = new Intent(MainActivity.this, GameActivity.class);
                             intent.putExtra(EXTRA_SCAN_RESULT_ITEM_DEVICE, item.device);
                             spinner.setVisibility(View.GONE);
+                            scanButton.setEnabled(true);
                             startActivity(intent);
                         }
                     }
@@ -144,47 +165,14 @@ public class MainActivity extends AppCompatActivity {
         return null;
     }
 
-    private void displayMessage(final String message, final Integer duration) {
-        runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                Toast toast = Toast.makeText(context,message,duration);
-                toast.show();
-            }
-        });
-    }
-
-    private void enableButtons() {
-        runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                // Enable all buttons
-                connectButton.setEnabled(true);
-            }
-        });
-    }
-
-    private void disableButtons() {
-        runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                // Enable all buttons
-                connectButton.setEnabled(false);
-            }
-        });
-    }
-
     @Override
     protected void onResume() {
         super.onResume();
-        enableButtons();
     }
 
     @Override
     protected void onPause() {
         super.onPause();
         devicesScanner.stopScanning();
-        spinner.setVisibility(View.GONE);
-        disableButtons();
     }
 }
